@@ -87,32 +87,31 @@ void  ProducerTask()
     tv_out.tv_usec = 0;
     setsockopt(socket_descriptor, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
 
-	int  num = 0;
+    int  num = 0;
     char buf = 0xfe;
-	char message[1024];
+    char message[1024];
     int  iLen = 0;
-	while(1)  
-	{  
-		iLen = recvfrom(socket_descriptor,message, 1024, 0, (struct sockaddr *)&sin,(socklen_t*)&sin_len);	
-        if(iLen > 0)
-        {
-            check_pack((uint8_t*)message, (uint16_t)iLen);
-            printf("iLen = %d, num = %d\n", iLen, num);
-            store((uint8_t*)message, iLen);
-            sendto(socket_descriptor, &buf, 1, 0, (struct sockaddr *)&address,  sizeof(address));  
-            ProduceItem((uint8_t *)message, (uint16_t)iLen);
-            num ++; 
-            if(strncmp(message,"stop",4) == 0)  
-            {  
-                printf("Sender has told me to end the connection\n");  
-                break;  
-            }
-        }
-        else
-        {
-            cout << "iLen is " << iLen << endl;
-        }
-	} 
+    while(1)  
+    {  
+	    iLen = recvfrom(socket_descriptor,message, 1024, 0, (struct sockaddr *)&sin,(socklen_t*)&sin_len);	
+	    if(iLen > 0)
+	    {
+		    check_pack((uint8_t*)message, (uint16_t)iLen);
+		    store((uint8_t*)message, iLen);
+		    sendto(socket_descriptor, &buf, 1, 0, (struct sockaddr *)&address,  sizeof(address));  
+		    ProduceItem((uint8_t *)message, (uint16_t)iLen);
+		    num ++; 
+		    if(strncmp(message,"stop",4) == 0)  
+		    {  
+			    printf("Sender has told me to end the connection\n");  
+			    break;  
+		    }
+	    }
+	    else
+	    {
+		    cout << "iLen is " << iLen << endl;
+	    }
+    } 
 
 	close(socket_descriptor);  
 }  

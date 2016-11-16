@@ -12,7 +12,7 @@
 
 #define  kItemRepositorySize  102400
 #define  BUFFSIZE             256
-typedef void* (*FUNC)(uint8_t* , uint16_t);
+
 using namespace std;
 
 typedef  struct ItemRepository {
@@ -31,7 +31,6 @@ typedef  struct ItemRepository {
 
 static  ItemRepository  gItemRepository;
 
-static int  handle(const uint8_t *data, const uint16_t data_len);
 
 void ProduceItem(const uint8_t* item, const uint16_t len)
 {
@@ -89,8 +88,6 @@ void InitItemRepository(ItemRepository *ir)
 	ir->consumed_item_counter = 0;
 }
 
-static zmq::context_t context (1);
-static zmq::socket_t socket (context, ZMQ_REQ);
 
 void ConsumerTask()
 {
@@ -98,6 +95,8 @@ void ConsumerTask()
 	uint16_t data_len = 0;
 	InitItemRepository(&gItemRepository);
 
+	zmq::context_t context (1);
+	zmq::socket_t socket (context, ZMQ_REQ);
 	socket.connect ("tcp://192.168.34.5:5555");
 
 	while(1) {
@@ -108,36 +107,28 @@ void ConsumerTask()
 		if(data_len > 0)
 		{
 			cout << "data_len = " <<  data_len << endl;
-			handle(itemstr, data_len);
+
+			uint8_t  jsonstr[1024];
+			static int num = 0;
+			uint16_t  jsonlen = 0;
+			decomp(itemstr, data_len, jsonstr, &jsonlen);
+			if(jsonlen != -1)
+			{
+				num ++;
+				cout << "jsonstr = " << jsonstr << ", num = " <<  num << endl;
+			}
+
+			//work
+			zmq::message_t  req(jsonlen);
+			memcpy(req.data(), jsonstr, jsonlen);
+			cout << "req.data is " << (char*)req.data() << endl;
+			socket.send(req);
+
+			zmq::message_t reply;
+			socket.recv (&reply);
+			cout << "reply.data is " << (char*)reply.data() << endl;
 		}
 	}
 
 	delete []itemstr;
 }
-
-int  handle(const uint8_t *data, const uint16_t data_len)
-{
-    uint8_t  jsonstr[1024];
-    uint16_t jsonlen = 0;
-
-    static int num = 0;
-    //Transformation
-    decomp(data, data_len, jsonstr, &jsonlen);
-    if(jsonlen != -1)
-    {
-        num ++;
-        cout << "jsonstr = " << jsonstr << ", num = " <<  num << endl;
-    }
-    
-    //work
-    zmq::message_t  req(jsonlen);
-    memcpy(req.data(), jsonstr, jsonlen+1);
-    cout << "req.data is " << (char*)req.data() << endl;
-    socket.send(req);
-
-    zmq::message_t reply;
-    socket.recv (&reply);
-
-    return 0;
-}
-

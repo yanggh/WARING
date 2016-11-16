@@ -15,11 +15,11 @@ int  store(uint8_t *data, uint16_t data_len)
         time_t  t = time(NULL);
         struct  tm *tt = localtime(&t);
 
-        sprintf(filename, "%04d%02d%02d%02d%02d%02d", tt->tm_year + 1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
+        sprintf(filename, "/tmp/%04d%02d%02d%02d%02d%02d", tt->tm_year + 1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
         fp = fopen(filename, "a+");
     }
 
-    if(num < 10000)
+    if(num < 100000)
     {
         num++; 
         fwrite(data, 1, data_len, fp);
@@ -33,7 +33,7 @@ int  store(uint8_t *data, uint16_t data_len)
         time_t  t = time(NULL);
         struct  tm *tt = localtime(&t);
 
-        sprintf(filename, "%04d%02d%02d%02d", tt->tm_year + 1900, tt->tm_mon, tt->tm_mday, tt->tm_sec);
+        sprintf(filename, "/tmp/%04d%02d%02d%02d%02d%02d", tt->tm_year + 1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
         fp = fopen(filename, "a+");
         num = 0;
     }

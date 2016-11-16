@@ -6,8 +6,8 @@
 
 using namespace std;
 #pragma  pack (1)
-#define  WAR_JSON_STR   "{ type: %d, fnum: %d, flen: %d, son_sys: %d, stop: %d, eng: %d, node: %d, bug: %d, time: %02d%02d-%02d-%02d %02d:%02d:%02d, res1: %d, res2: %d, res3: %d, check: %d}"
-#define  SHAKE_JSON_STR   "{ type:%d, len: %d, son_sys: %d, time: %02d%02d-%02d-%02d  %02d:%02d:%02d}"
+#define  WAR_JSON_STR   "{ type: \"%d\", fnum: \"%d\", flen: \"%d\", son_sys: \"%d\", stop: \"%d\", eng: \"%d\", node:\"%d\", bug: \"%d\", time: \'%02d%02d-%02d-%02d %02d:%02d:%02d\', res1: \"%d\", res2: \"%d\", res3: \"%d\", check: \"%d\"}"
+#define  SHAKE_JSON_STR   "{ type:\"%d\", len: \"%d\", son_sys: \"%d\", time: \"%02d%02d-%02d-%02d  %02d:%02d:%02d\"}"
 
 typedef struct TT{
      uint8_t   year_h;
