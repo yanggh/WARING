@@ -7,10 +7,10 @@
 #include <string>
 #include <cstring>
 #include <zmq.hpp>
-#include "decomp.h"
+#include "Decomp.h"
 #include "ConsumerTask.h"
 
-#define  kItemRepositorySize  102400
+#define  kItemRepositorySize  1024
 #define  BUFFSIZE             256
 
 using namespace std;
