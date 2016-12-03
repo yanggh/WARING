@@ -99,6 +99,8 @@ int comp_dir(const string dir)
 
 int init_conf(int keepalive = 5, int sport = 5, string webip = "127.0.0.1", int webport = 100, string dir = "/tmp/store")
 {
+    pthread_rwlock_init(&conffile.lock, NULL);
+
     pthread_rwlock_wrlock(&conffile.lock);
     set_keepalive(keepalive);
     set_sport(sport);
@@ -118,32 +120,33 @@ int reload_conf(int keepalive = 5, int sport = 5, string webip = "127.0.0.1", in
         pthread_rwlock_unlock(&conffile.lock);
     } 
 
-    if(comp_sport(sport) == 0)
+    if(comp_sport(sport) != 0)
     {
         pthread_rwlock_wrlock(&conffile.lock);
         set_sport(sport);
         pthread_rwlock_unlock(&conffile.lock);
     }
 
-    if(comp_webip(webip) == 0)
+    if(comp_webip(webip) != 0)
     {   
         pthread_rwlock_wrlock(&conffile.lock);
         set_webip(webip);
         pthread_rwlock_unlock(&conffile.lock);
     }
 
-    if(comp_webport(webport) == 0)
+    if(comp_webport(webport) != 0)
     {
         pthread_rwlock_wrlock(&conffile.lock);
         set_webport(webport);
         pthread_rwlock_unlock(&conffile.lock);
     }
 
-    if(comp_dir(dir) == 0)
+    if(comp_dir(dir) != 0)
     {
         pthread_rwlock_wrlock(&conffile.lock);
         set_dir(dir);
         pthread_rwlock_unlock(&conffile.lock);
     }
+
     return 0;
 }

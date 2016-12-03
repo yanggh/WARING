@@ -7,8 +7,6 @@
 #include <thread>
 #include <queue>
 #include <list>
-#include <sys/time.h>
-#include <signal.h>
 #include "ConsumerTask.h"
 #include "KeepAlive.h"
 #include "Conf.h"
@@ -16,7 +14,6 @@
 
 #define WARING     0
 #define KEEPALIVE  1
-#define TIMEOUT    2
 
 using namespace std;
 
@@ -154,14 +151,13 @@ int RecvUdp()
     return 0;
 }
 
-//timer work
-void  alive(int signo)
+int KeepAlive()
 {
     list<Node>::iterator itor;
-    pthread_rwlock_rdlock(&lock);
-    itor = clist.begin();
 
-    cout << "alive " << endl;
+    pthread_rwlock_rdlock(&lock);
+
+    itor = clist.begin();
     while(itor != clist.end())
     {
         sendto(sockfd, "1212", 4, 0, (struct sockaddr*)&(itor->sin), sizeof(itor->sin));
@@ -177,27 +173,7 @@ void  alive(int signo)
         itor++;
     }
     pthread_rwlock_unlock(&lock);
-}
-
-int   KeepAlive()
-{
-    struct itimerval tick;
-
-    signal(SIGALRM,  alive);
-    memset(&tick, 0, sizeof(tick));
-
-    tick.it_value.tv_sec = TIMEOUT;
-    tick.it_value.tv_usec = 0;
-
-    tick.it_interval.tv_sec = TIMEOUT;
-    tick.it_interval.tv_usec = 0;
-
-    if(setitimer(ITIMER_REAL, &tick, NULL) < 0)
-        cout << "Set timer failed!" << endl;
-
-    while(1)
-    {
-        pause();
-    }
+    
     return 0;
 }
+

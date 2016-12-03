@@ -126,7 +126,7 @@ void  consum()
     struct sockaddr_in address;
     bzero(&address,sizeof(address));
     address.sin_family=AF_INET;
-    address.sin_addr.s_addr=inet_addr("192.168.34.66");
+    address.sin_addr.s_addr=inet_addr("192.168.34.28");
     address.sin_port=htons(sport);
 
     uint8_t  *p = NULL;
@@ -173,7 +173,6 @@ void  consum()
 
                     num = sizeof(SHAKE); 
                     sendto(socket_descriptor, (uint8_t*)&shake, sizeof(SHAKE), 0,  (struct sockaddr *)&address,  sizeof(address));
-
                     p = NULL;
                     num = 0;
                 }

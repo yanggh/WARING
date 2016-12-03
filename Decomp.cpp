@@ -6,6 +6,7 @@
 
 using namespace std;
 #pragma  pack (1)
+
 #define  WAR_JSON_STR   "{ type: \"%d\", fnum: \"%d\", flen: \"%d\", son_sys: \"%d\", stop: \"%d\", eng: \"%d\", node:\"%d\", bug: \"%d\", time: \'%02d%02d-%02d-%02d %02d:%02d:%02d\', res1: \"%d\", res2: \"%d\", res3: \"%d\", check: \"%d\"}"
 #define  SHAKE_JSON_STR   "{ type:\"%d\", len: \"%d\", son_sys: \"%d\", time: \"%02d%02d-%02d-%02d  %02d:%02d:%02d\"}"
 
@@ -69,19 +70,10 @@ int  decomp(const uint8_t *input, const uint16_t inlen, uint8_t *output, uint16_
         p = (struct SHAKE*)input;
         *outlen = sprintf((char*)output, SHAKE_JSON_STR, p->type, p->len, p->son_sys, p->tt.year_h,  p->tt.year_l,  p->tt.mon, p->tt.day,  p->tt.hh,  p->tt.mm,   p->tt.ss);
         
-        if(stype1 == 0xaa)
-        {
-            cout << "aa" << endl;
-        }
-        else if(stype1 == 0xff)
-        {
-            cout << "ff" << endl;
-        }
     }
     else
     {
         *outlen = -1;
-        cout << "error data" << endl;
     }
 
     return 0;
