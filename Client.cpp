@@ -1,5 +1,5 @@
 #include <thread>
-#include <queue>
+#include <list>
 #include <unistd.h>
 #include <iostream>
 #include <strings.h>
@@ -14,10 +14,9 @@ using namespace std;
 
 static  const int sport=18888;
 static  const int rport=18887;
-static  queue<uint8_t*> que;
 
 typedef struct TT{
-     uint8_t   year_h;
+    uint8_t   year_h;
     uint8_t   year_l;
     uint8_t   mon;
     uint8_t   day;
@@ -55,48 +54,64 @@ typedef struct SHAKE
     TT         tt;
 }SHAKE;
 
-void produce()
-{
-    static uint16_t num = 0;
-    uint8_t *p = NULL;
-    SEGMENT *seg = NULL;
+static  int socket_descriptor = 0;
+static  list<SEGMENT> seglist;
 
+void produce(string ip)
+{
+    SEGMENT seg;
+    static uint16_t num = 0;
+
+    struct sockaddr_in address;
+    bzero(&address,sizeof(address));
+    address.sin_family=AF_INET;
+    address.sin_addr.s_addr=inet_addr(ip.c_str());
+    address.sin_port=htons(sport);
+
+    list<SEGMENT>::iterator itor;
     while(1)
     {
+        itor = seglist.begin();
+        while(itor != seglist.end())
+        {
+            if(itor->check == 1)
+            {
+                seglist.erase(itor);
+                sendto(socket_descriptor, (uint8_t*)itor, sizeof(itor), 0,  (struct sockaddr *)&address,  sizeof(address));
+                break;
+            }
+            itor ++;
+        }
+
         usleep(5000);
-        
         //create node
-        p = new uint8_t[sizeof(SEGMENT)];
-        seg = (SEGMENT*)p;
         time_t tt = time(NULL);
         struct tm *t = localtime(&tt);
        
-        bzero(p, sizeof(SEGMENT));
+        seg.type = 0xff7e;
+        seg.fnum = (num++) % 0xffff;
+        seg.flen = rand() % sizeof(SEGMENT);
+        seg.son_sys = rand() % 0x0a;
+        seg.stop = rand() % 0x20;
+        seg.eng = rand() % 0x10;
+        seg.node = rand() % 167 + 0x100;
 
-        seg->type = 0xff7e;
-        seg->fnum = (num++) % 0xffff;
-        seg->flen = rand() % 10;
-        seg->son_sys = rand() % 11;
-        seg->stop = rand() % 0x100;
-        seg->eng = rand() % 0x100;
-        seg->node = rand() % 0x100;
+        seg.tt.year_h = (t->tm_year + 1900) / 100;
+        seg.tt.year_l = (t->tm_year + 1900) % 100;
+        seg.tt.mon = t->tm_mon;
+        seg.tt.day = t->tm_mday;
+        seg.tt.hh = t->tm_hour;
+        seg.tt.mm = t->tm_min;
+        seg.tt.ss = t->tm_sec; 
 
-        seg->tt.year_h = (t->tm_year + 1900) / 100;
-        seg->tt.year_l = (t->tm_year + 1900) % 100;
-        seg->tt.mon = t->tm_mon;
-        seg->tt.day = t->tm_mday;
-        seg->tt.hh = t->tm_hour;
-        seg->tt.mm = t->tm_min;
-        seg->tt.ss = t->tm_sec; 
+        seg.res1 = (seg.son_sys == 8 ? rand() % 100 : ( seg.son_sys == 2 ? rand() % 5 + 1 : (seg.son_sys == 3 ? rand() % 3 + 1 : 0)));
+        seg.res2 = (seg.son_sys == 8 ? rand() % 100 : 0);
+        seg.res3 = (seg.son_sys == 8 ? rand() % 100 : 0);
 
-        seg->res1 = (seg->son_sys == 8 ? rand() % 100 : 0);
-        seg->res2 = (seg->son_sys == 8 ? rand() % 100 : 0);
-        seg->res3 = (seg->son_sys == 8 ? rand() % 100 : 0);
-
-        seg->check = 0;
+        seg.check = 0;
    
-        cout << "que.size() is " << que.size() << endl;
-        que.push(p);
+        sendto(socket_descriptor, (uint8_t*)&seg, sizeof(SHAKE), 0,  (struct sockaddr *)&address,  sizeof(address));
+        seglist.push_back(seg);
     }
 }
 
@@ -104,9 +119,8 @@ void  consum()
 {
     int ret;
     int sin_len;
-    uint8_t  message[256];
+    char  message[256];
 
-    int socket_descriptor;
     struct sockaddr_in sin;
 
     bzero(&sin,sizeof(sin));
@@ -123,72 +137,64 @@ void  consum()
     tv_out.tv_usec = 0;
     setsockopt(socket_descriptor, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
 
-    struct sockaddr_in address;
-    bzero(&address,sizeof(address));
-    address.sin_family=AF_INET;
-    address.sin_addr.s_addr=inet_addr("192.168.34.28");
-    address.sin_port=htons(sport);
-
-    uint8_t  *p = NULL;
     SHAKE    *q = NULL;
-    uint16_t num = 0;
     SHAKE    shake;
+
+    list<SEGMENT>::iterator itor;
+
     while(1)
     {
-        while(!que.empty())
+        ret = recvfrom(socket_descriptor,  message,   256, 0, (struct sockaddr *)&sin, (socklen_t*)&sin_len);
+        message[ret] = '\0';
+
+        if(ret > 0)
         {
-            p = que.front();
-            num = sizeof(SEGMENT);
-
-            sendto(socket_descriptor,  p,  num,  0,  (struct sockaddr *)&address,  sizeof(address));
-            ret = recvfrom(socket_descriptor,  message,   256, 0, (struct sockaddr *)&sin, (socklen_t*)&sin_len);
-            message[ret] = '\0';
-
-            if(ret > 0)
+            if(ret == 2)
             {
-                if(ret == 1)
+                itor = seglist.begin();
+                while(itor != seglist.end())
                 {
-                    if(message[ret - 1] == 0xfe)
+                    if(itor->fnum == atoi(message))
                     {
-                        delete p;
-                        p = NULL;
-                        que.pop();
+                        seglist.erase(itor);
+                        break;
                     }
+                    itor ++;
                 }
-                else
+
+                if(itor == seglist.end())
                 {
-                    q = (SHAKE*)message;
-
-                    shake.type = 0xff;
-                    shake.len = sizeof(SHAKE);
-                    shake.son_sys = q->son_sys;
-
-                    shake.tt.year_h = q->tt.year_h;
-                    shake.tt.year_l = q->tt.year_l;
-                    shake.tt.mon = q->tt.mon;
-                    shake.tt.day = q->tt.day;
-                    shake.tt.hh = q->tt.hh;
-                    shake.tt.mm = q->tt.mm;
-                    shake.tt.ss = q->tt.ss;
-
-                    num = sizeof(SHAKE); 
-                    sendto(socket_descriptor, (uint8_t*)&shake, sizeof(SHAKE), 0,  (struct sockaddr *)&address,  sizeof(address));
-                    p = NULL;
-                    num = 0;
+                    cout << "not find send" << endl;
                 }
             }
+            else
+            {
+                q = (SHAKE*)message;
+
+                shake.type = 0xff;
+                shake.len = sizeof(SHAKE);
+                shake.son_sys = q->son_sys;
+
+                shake.tt.year_h = q->tt.year_h;
+                shake.tt.year_l = q->tt.year_l;
+                shake.tt.mon = q->tt.mon;
+                shake.tt.day = q->tt.day;
+                shake.tt.hh = q->tt.hh;
+                shake.tt.mm = q->tt.mm;
+                shake.tt.ss = q->tt.ss;
+
+                sendto(socket_descriptor, (uint8_t*)&shake, sizeof(SHAKE), 0,  (struct sockaddr *)&sin,  sizeof(sin));
+            }
         }
-        usleep(5000);
     }
 
     close(socket_descriptor);
 }
 
-
-int main()
+int main(int argc, char **argv)
 {
-
-    thread produce1(produce);
+    
+    thread produce1(produce, argv[1]);
     thread consum1(consum);
 
     produce1.join();

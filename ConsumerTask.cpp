@@ -31,7 +31,6 @@ typedef  struct ItemRepository {
 
 static  ItemRepository  gItemRepository;
 
-
 void ProduceItem(const uint8_t* item, const uint16_t len)
 {
     unique_lock<mutex> pro_lock(gItemRepository.produced_item_counter_mtx);

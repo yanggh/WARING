@@ -62,6 +62,36 @@ int  decomp(const uint8_t *input, const uint16_t inlen, uint8_t *output, uint16_
         SEGMENT *p = NULL;
         p = (struct SEGMENT*)input;
 
+        if(p->son_sys == 0x02)
+        {
+            if(p->res1 == 1)
+            {
+                p->res1 = 0;
+            }
+            else if(p->res1 == 2 || p->res1 == 3)
+            {
+                p->res1 = 1;
+            }
+            else if(p->res1 == 4 || p->res1 == 5)
+            {
+                p->res1 = 2;
+            }
+        }
+        else if(p->son_sys == 0x03)
+        {
+            if(p->res1 == 3)
+            {
+                p->res1 = 0;
+            }
+            else if(p->res1 == 2)
+            {
+                p->res1 = 1; 
+            }
+            else if(p->res1 == 1)
+            {
+                p->res1 = 2;
+            }
+        }
         *outlen = sprintf((char*)output, WAR_JSON_STR, p->type, p->fnum, p->flen, p->son_sys, p->stop,  p->eng,  p->node,  p->bug,  p->tt.year_h,  p->tt.year_l,  p->tt.mon, p->tt.day,  p->tt.hh,  p->tt.mm,   p->tt.ss,   p->res1, p->res2, p->res3, p->check);
     }
     else if(stype1 == 0xaa || stype1 == 0xff)
