@@ -103,7 +103,7 @@ void produce(string ip)
         seg.tt.mm = t->tm_min;
         seg.tt.ss = t->tm_sec; 
 
-        seg.res1 = (seg.son_sys == 8 ? rand() % 6 + 1 : ( seg.son_sys == 2 ? rand() % 5 + 1 : (seg.son_sys == 3 ? rand() % 3 + 1 : (seg.son_sys == 4 ? : rand() % 3 : 0))));
+       seg.res1 = (seg.son_sys == 8 ? rand() % 6 + 1 : ( seg.son_sys == 2 ? rand() % 5 + 1 : (seg.son_sys == 3 ? rand() % 3 + 1 : (seg.son_sys == 4 ? rand() % 3 : 0))));
         seg.res2 = (seg.son_sys == 8 ? rand() % 100 : 0);
         seg.res3 = (seg.son_sys == 8 ? rand() % 100 : 0);
 
