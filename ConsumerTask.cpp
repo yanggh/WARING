@@ -98,7 +98,8 @@ void ConsumerTask()
 	zmq::socket_t socket (context, ZMQ_REQ);
 	socket.connect ("tcp://192.168.34.5:5555");
 
-	while(1) {
+	while(1) 
+    {
 		unique_lock<mutex> lock(gItemRepository.consumed_item_counter_mtx);
 		ConsumeItem(&gItemRepository, itemstr, &data_len);
 		++(gItemRepository.consumed_item_counter);
@@ -120,7 +121,6 @@ void ConsumerTask()
 			//work
 			zmq::message_t  req(jsonlen);
 			memcpy(req.data(), jsonstr, jsonlen);
-			cout << "req.data is " << (char*)req.data() << endl;
 			socket.send(req);
 
 			zmq::message_t reply;

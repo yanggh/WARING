@@ -76,8 +76,7 @@ void produce(string ip)
         {
             if(itor->check == 1)
             {
-                seglist.erase(itor);
-                sendto(socket_descriptor, (uint8_t*)itor, sizeof(itor), 0,  (struct sockaddr *)&address,  sizeof(address));
+                //sendto(socket_descriptor, (uint8_t*)&itor, sizeof(SEGMENT), 0,  (struct sockaddr *)&address,  sizeof(address));
                 break;
             }
             itor ++;
@@ -90,7 +89,7 @@ void produce(string ip)
        
         seg.type = 0xff7e;
         seg.fnum = (num++) % 0xffff;
-        seg.flen = rand() % sizeof(SEGMENT);
+        seg.flen = sizeof(SEGMENT);
         seg.son_sys = rand() % 0x0a;
         seg.stop = rand() % 0x20;
         seg.eng = rand() % 0x10;
@@ -104,13 +103,13 @@ void produce(string ip)
         seg.tt.mm = t->tm_min;
         seg.tt.ss = t->tm_sec; 
 
-        seg.res1 = (seg.son_sys == 8 ? rand() % 100 : ( seg.son_sys == 2 ? rand() % 5 + 1 : (seg.son_sys == 3 ? rand() % 3 + 1 : 0)));
+        seg.res1 = (seg.son_sys == 8 ? rand() % 6 + 1 : ( seg.son_sys == 2 ? rand() % 5 + 1 : (seg.son_sys == 3 ? rand() % 3 + 1 : (seg.son_sys == 4 ? : rand() % 3 : 0))));
         seg.res2 = (seg.son_sys == 8 ? rand() % 100 : 0);
         seg.res3 = (seg.son_sys == 8 ? rand() % 100 : 0);
 
         seg.check = 0;
-   
-        sendto(socket_descriptor, (uint8_t*)&seg, sizeof(SHAKE), 0,  (struct sockaddr *)&address,  sizeof(address));
+  
+        sendto(socket_descriptor, (uint8_t*)&seg, sizeof(SEGMENT), 0,  (struct sockaddr *)&address,  sizeof(address));
         seglist.push_back(seg);
     }
 }
@@ -147,6 +146,7 @@ void  consum()
         ret = recvfrom(socket_descriptor,  message,   256, 0, (struct sockaddr *)&sin, (socklen_t*)&sin_len);
         message[ret] = '\0';
 
+        int  flag = 0;
         if(ret > 0)
         {
             if(ret == 2)
@@ -157,14 +157,15 @@ void  consum()
                     if(itor->fnum == atoi(message))
                     {
                         seglist.erase(itor);
+                        flag = 1;
                         break;
                     }
                     itor ++;
                 }
 
-                if(itor == seglist.end())
+                if(flag == 1)
                 {
-                    cout << "not find send" << endl;
+                    cout << "not find send, num = " << atoi(message)  << endl;
                 }
             }
             else
@@ -187,7 +188,6 @@ void  consum()
             }
         }
     }
-
     close(socket_descriptor);
 }
 

@@ -154,7 +154,6 @@ int init_conf(int keepalive, int sport, string webip, int webport, string commit
 
 int get_database()
 {
-#if 1
     MYSQL mysql;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -192,7 +191,6 @@ int get_database()
 
     mysql_free_result(res);
     mysql_close(&mysql);
-#endif
     return 0;
 }
 

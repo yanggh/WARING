@@ -22,7 +22,12 @@ int get_dir(string dir);
 int set_dir(const string dir);
 int comp_dir(const string dir);
 
-int init_conf(int keepalive, int sport, string webip, int webport);
+int init_conf(int keepalive, int sport, string webip, int webport, string commit, int trapport, string dir);
 int reload_conf(int keepalive, int sport, string webip, int webport);
+
+
+int get_commit(string  commit);
+int set_commit(const string commit);
+int comp_commit(const string commit);
 
 #endif

@@ -16,7 +16,7 @@
 
 #define WARING     0
 #define KEEPALIVE  1
-#define TIMEOUT    2
+#define TIMEOUT    1
 
 using namespace std;
 
@@ -64,8 +64,8 @@ int  init_client(int num)
     {
         p.son_sys = 1;
         p.stop = 1;
-        p.ip = "192.168.34.56";
-        p.port = 88889;
+        p.ip = "192.168.34.28";
+        p.port = 18887;
         p.flag = 0;
 
         bzero(&p.sin,sizeof(p.sin));  
@@ -112,6 +112,7 @@ int  create_sock()
 
 int CheckClient(string ip, int port)
 {
+    int   flag = 0;
     list<Node>::iterator itor;
     
     itor = clist.begin();
@@ -121,6 +122,7 @@ int CheckClient(string ip, int port)
     {
         if((itor->ip == ip))
         {
+            flag = 1;
             itor->flag = 2 * TIMEOUT;
             break;
         }
@@ -128,7 +130,7 @@ int CheckClient(string ip, int port)
     }
 
     pthread_rwlock_unlock(&lock);
-    if(itor == clist.end())
+    if(flag == 0)
     {
         cout << "not find dev, ip is " << ip << ", port is " << port << endl;
         return -1;
@@ -193,12 +195,12 @@ int RecvUdp()
                 store((uint8_t*)message, iLen);
                 sendto(sockfd, (uint8_t*)&fnum, 2, 0, (struct sockaddr *)&sin,  sin_len);  
                 ProduceItem((uint8_t *)message, (uint16_t)iLen);
-                cout << message << ", WARING" << inet_ntoa(sin.sin_addr) << ":" << ntohs(sin.sin_port) << endl;
+                cout << "WARING: " << inet_ntoa(sin.sin_addr) << ":" << ntohs(sin.sin_port) << endl;
             }
             else if(type == KEEPALIVE)
             {
                 CheckClient(inet_ntoa(sin.sin_addr), ntohs(sin.sin_port)); 
-                cout << message << ", KEEPALIVE" << inet_ntoa(sin.sin_addr) << ":" << ntohs(sin.sin_port) << endl;
+                cout << "KEEPALIVE: " << inet_ntoa(sin.sin_addr) << ":" << ntohs(sin.sin_port) << endl;
             }
         }
     }
@@ -214,10 +216,13 @@ void  alive(int signo)
 
     //cout << "alive start" << endl;
     ALIVE alive;
+    char buf[1024];
     getalive(&alive);
-
+    
+    int  flag = 0;
     while(itor != clist.end())
     {
+        flag = 0;
         if(itor->flag > 0)
         {
             itor->flag --;
@@ -225,10 +230,19 @@ void  alive(int signo)
         else if(itor->flag == 0)
         {
             itor->flag = 2 * TIMEOUT;
-            sendto(sockfd, (void*)&alive, sizeof(ALIVE), 0, (struct sockaddr*)&(itor->sin), sizeof(itor->sin));
-            cout << "keepalive time out" << endl;
-            ProduceItem((uint8_t *)"message", 7);
+            flag = 1;
         }
+
+        sendto(sockfd, (void*)&alive, sizeof(ALIVE), 0, (struct sockaddr*)&(itor->sin), sizeof(itor->sin));
+        if(flag == 1)
+        {
+            cout << "keepalive time out" << endl;
+            bzero(buf, 1024);
+            sprintf(buf, "{ son_sys:  \"%d\", stop: \"%d\", ip :\" %s\", port: \"%d\", flag : -1 }", itor->son_sys, itor->stop, itor->ip.c_str(), itor->port);
+            printf("buf = %s\n", buf);
+        }
+        //ProduceItem(buf, strlen(buf));
+
 
         itor++;
     }
@@ -239,7 +253,7 @@ int KeepAlive()
 {
     struct itimerval tick;
 
-    init_client(2);
+    init_client(1);
     signal(SIGALRM,  alive);
     memset(&tick, 0, sizeof(tick));
 

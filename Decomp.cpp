@@ -7,7 +7,7 @@
 using namespace std;
 #pragma  pack (1)
 
-#define  WAR_JSON_STR   "{ type: \"%d\", fnum: \"%d\", flen: \"%d\", son_sys: \"%d\", stop: \"%d\", eng: \"%d\", node:\"%d\", bug: \"%d\", time: \'%02d%02d-%02d-%02d %02d:%02d:%02d\', res1: \"%d\", res2: \"%d\", res3: \"%d\", check: \"%d\"}"
+#define  WAR_JSON_STR   "{ type: \"%d\", fnum: \"%d\", flen: \"%d\", son_sys: \"%d\", stop: \"%d\", eng: \"%d\", node:\"%d\", bug: \"%d\", time: \"%02d%02d-%02d-%02d %02d:%02d:%02d\", res1: \"%d\", res2: \"%d\", res3: \"%d\", check: \"%d\"}"
 #define  SHAKE_JSON_STR   "{ type:\"%d\", len: \"%d\", son_sys: \"%d\", time: \"%02d%02d-%02d-%02d  %02d:%02d:%02d\"}"
 
 typedef struct TT{
@@ -57,7 +57,7 @@ int  decomp(const uint8_t *input, const uint16_t inlen, uint8_t *output, uint16_
     stype1 = *(uint8_t*)input;
     stype2 = *(uint8_t*)(input+1);
 
-    if(stype1 == 0x7e && stype2 == 0xff)
+    if((stype1 == 0x7e && stype2 == 0xff) || (stype1 == 0xff && stype2 == 0x7e))
     {
         SEGMENT *p = NULL;
         p = (struct SEGMENT*)input;
@@ -92,6 +92,7 @@ int  decomp(const uint8_t *input, const uint16_t inlen, uint8_t *output, uint16_
                 p->res1 = 2;
             }
         }
+
         *outlen = sprintf((char*)output, WAR_JSON_STR, p->type, p->fnum, p->flen, p->son_sys, p->stop,  p->eng,  p->node,  p->bug,  p->tt.year_h,  p->tt.year_l,  p->tt.mon, p->tt.day,  p->tt.hh,  p->tt.mm,   p->tt.ss,   p->res1, p->res2, p->res3, p->check);
     }
     else if(stype1 == 0xaa || stype1 == 0xff)
