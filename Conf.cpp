@@ -1,20 +1,34 @@
 #include <iostream>
 #include <thread>
 #include <unistd.h>
-#include <mysql.h>
 #include <string.h>
 #include "Conf.h"
+
+#define  KEEPALIVE  "keepalive"
+#define  LOGDIR     "log-dir"
+#define  LISTENPORT "listen-port"
+#define  WEBIP      "webip"
+#define  WEBPORT    "webport"
+#define  COMMIT     "commit"
+#define  SNMPPORT   "trapport"
+#define  USERNAME   "username"
+#define  PASSWORD   "password"
+#define  MYSQLIP    "mysqlip"
+#define  DATABASE   "database"
 
 typedef struct ST_CONF
 {
     int  keepalive;
+    char dir[256];
     int  sport;
-    string  webip;
+    char webip[256];
     int  webport;
-    string  commit;
+    char commit[256];
     int  trapport;
-    string dir;
-    pthread_rwlock_t  lock;
+    char username[256]; 
+    char password[256];
+    char mysqlip[256];
+    char database[256];
 }ST_CONF;
 
 static  ST_CONF  conffile;
@@ -51,21 +65,21 @@ int comp_sport(const int sport)
     return (conffile.sport == sport ? 0 : -1);
 }
 
-int get_webip(string ip)
+int get_webip(char* ip)
 {
-    ip = conffile.webip;
+    memcpy(ip, conffile.webip, strlen(conffile.webip));
     return 0;
 }
 
-int set_webip(const string ip)
+int set_webip(const char* ip)
 {
-    conffile.webip = ip;
+    memcpy(conffile.webip, ip, strlen(ip));
     return 0;
 }
 
-int comp_webip(const string ip)
+int comp_webip(const char* ip)
 {
-    return ip == conffile.webip ? 0 : -1;
+    return memcmp(ip, conffile.webip, strlen(conffile.webip)) == 0 ? 0 : -1;
 }
 
 int get_webport()
@@ -84,38 +98,39 @@ int comp_webport(const int webport)
     return conffile.webport == webport ? 0 : -1;
 }
 
-int get_dir(string dir)
+int get_dir(char* dir)
 {
-    dir = conffile.dir;
+    memcpy(dir, conffile.dir, strlen(conffile.dir));
     return 0;
 }
 
-int set_dir(const string dir)
+int set_dir(const char* dir)
 {
-    conffile.dir = dir;
+    memcpy(conffile.dir, dir, strlen(dir));
     return 0;
 }
 
-int comp_dir(const string dir)
+int comp_dir(const char* dir)
 {
-    return dir == conffile.dir ? 0 : -1;
+    return memcmp(dir, conffile.dir, strlen(conffile.dir)) == 0 ? 0 : -1;
 }
 
-int  get_commit(string  commit)
+int  get_commit(char*  commit)
 {
-    commit = conffile.commit;
+    memcpy(commit, conffile.commit, strlen(conffile.commit));
     return 0;
 }
 
-int set_commit(const string commit)
+int set_commit(const char* commit)
 {
-    conffile.commit = commit;
+    bzero(conffile.commit, 256);
+    memcpy(conffile.commit, commit, strlen(commit));
     return 0;
 }
 
-int comp_commit(const string commit)
+int comp_commit(const char* commit)
 {
-    return (conffile.commit == commit ? 0 : -1);
+    return (memcmp(conffile.commit, commit, strlen(commit)) == 0 ? 0 : -1);
 }
 
 int  get_trapport(int trapport)
@@ -135,102 +150,123 @@ int comp_trapport(const int trapport)
     return (conffile.trapport == trapport ? 0 : -1);
 }
 
-int init_conf(int keepalive, int sport, string webip, int webport, string commit, int trapport, string dir)
+int  get_username(char* username)
 {
-    pthread_rwlock_init(&conffile.lock, NULL);
-    pthread_rwlock_wrlock(&conffile.lock);
-    set_keepalive(keepalive);
-    set_sport(sport);
-    set_webip(webip);
-    set_webport(webport);
-    set_dir(dir);
-    set_commit(commit);
-    set_trapport(trapport);
-    pthread_rwlock_unlock(&conffile.lock);
-
-    //cout << "init conf file" << endl;
+    memcpy(username, conffile.username, strlen(conffile.username));
     return 0;
 }
 
-int get_database()
+int  set_username(const char* username)
 {
-    MYSQL mysql;
-    MYSQL_RES *res;
-    MYSQL_ROW row;
+    memcpy(conffile.username, username, strlen(conffile.username));
+    return 0;
+}
 
-    //char* server_groups[]={"embedded", "server", "this_program_server",(char*)NULL};
-    //mysql_library_init(0,NULL,server_groups);
-    mysql_init(&mysql);
+int  get_password(char* password)
+{
+    memcpy(password, conffile.password, strlen(conffile.password));
+    return 0;
+}
 
-    if(!mysql_real_connect(&mysql,"192.168.1.139","root","root","db_record",0,NULL,0))
+int  set_password(const char* password)
+{
+    bzero(conffile.password, 256);
+    memcpy(conffile.password, password, strlen(password));
+    return 0;
+}
+
+int  get_mysqlip(char *mysqlip)
+{
+    memcpy(mysqlip, conffile.mysqlip, strlen(conffile.mysqlip));
+    return 0;
+}
+
+int  set_mysqlip(const char* mysqlip)
+{
+    bzero(conffile.mysqlip, 256);
+    memcpy(conffile.mysqlip, mysqlip, strlen(mysqlip));
+    return 0;
+}
+
+int  get_database(char* database)
+{
+    memcpy(database, conffile.database, strlen(conffile.database));
+    return 0;
+}
+
+int  set_database(const char* database)
+{
+    bzero(conffile.database, 256);
+    memcpy(conffile.database, database, strlen(database));
+    return 0;
+}
+
+int init_conf(const char* conffile)
+{
+    char  buf1[256];
+    char  buf2[256];
+    char  buff[256];
+
+    FILE  *fp = fopen(conffile,  "r");
+
+    while(fgets(buff, 256, fp) != NULL)
     {
-        cout << "无法连接到数据库，错误原因是:" << mysql_error(&mysql) << endl;
-    }
+        sscanf(buff, "%s %s", buf1, buf2);
 
-    char sqlcmd[1024];
-    sprintf(sqlcmd,"%s","select * from friends");
-    unsigned  int t=mysql_real_query(&mysql,sqlcmd,(unsigned int)strlen(sqlcmd));
-
-    if(t)
-    {
-        cout << "查询数据库失败" << mysql_error(&mysql) << endl;
-    }
-    else 
-    {
-        res = mysql_store_result(&mysql);//返回查询的全部结果集
-        while((row=mysql_fetch_row(res)) > 0)
+        if(memcmp(buf1, KEEPALIVE, strlen(KEEPALIVE)) == 0)
         {
-            //mysql_fetch_row取结果集的下一行
-            for(t = 0; t < mysql_num_fields(res); t++)
-            {
-                //结果集的列的数量
-                cout << row[t] << "\t";
-            }
+            set_keepalive(atoi(buf2));        
         }
-    }
+        else if(memcmp(buf1, LOGDIR, strlen(LOGDIR)) == 0)
+        {
+            set_dir(buf2); 
+        }
+        else if(memcmp(buf1, LISTENPORT, strlen(LISTENPORT)) == 0)
+        {
+            set_sport(atoi(buf2)); 
+        }
+        else if(memcmp(buf1, WEBIP, strlen(WEBIP)) == 0)
+        {
+            set_webip(buf2); 
+        }
+        else if(memcmp(buf1, WEBPORT, strlen(WEBPORT)) == 0)
+        {
+            set_webport(atoi(buf2));
+        }
+        else if(memcmp(buf1, COMMIT, strlen(COMMIT)) == 0)
+        {
+            set_commit(buf2); 
+        }
+        else if(memcmp(buf1, SNMPPORT, strlen(SNMPPORT)) == 0)
+        {
+            set_trapport(atoi(buf2));
+        }
+        else if(memcmp(buf1, USERNAME, strlen(USERNAME)) == 0)
+        {
+            set_username(buf2);        
+        }
+        else if(memcmp(buf1, PASSWORD, strlen(PASSWORD)) == 0)
+        {
+            set_password(buf2); 
+        }
+        else if(memcmp(buf1, MYSQLIP, strlen(MYSQLIP)) == 0)
+        {
+            set_mysqlip(buf2);
+        }
+        else if(memcmp(buf1, DATABASE, strlen(DATABASE)) == 0)
+        {
+            set_database(buf2);
+        }
+        else
+        {
+            cout << "Not find buff" << endl;
+        }
 
-    mysql_free_result(res);
-    mysql_close(&mysql);
-    return 0;
-}
-
-int reload_conf(int keepalive = 5, int sport = 5, string webip = "127.0.0.1", int webport = 100, string dir = "/tmp/store")
-{
-    if(comp_keepalive(keepalive) != 0)
-    {
-        pthread_rwlock_wrlock(&conffile.lock);
-        set_keepalive(keepalive);
-        pthread_rwlock_unlock(&conffile.lock);
+        bzero(buf1, 256);
+        bzero(buf2, 256);
+        bzero(buff, 256);  
     } 
+    fclose(fp);
 
-    if(comp_sport(sport) != 0)
-    {
-        pthread_rwlock_wrlock(&conffile.lock);
-        set_sport(sport);
-        pthread_rwlock_unlock(&conffile.lock);
-    }
-
-    if(comp_webip(webip) != 0)
-    {   
-        pthread_rwlock_wrlock(&conffile.lock);
-        set_webip(webip);
-        pthread_rwlock_unlock(&conffile.lock);
-    }
-
-    if(comp_webport(webport) != 0)
-    {
-        pthread_rwlock_wrlock(&conffile.lock);
-        set_webport(webport);
-        pthread_rwlock_unlock(&conffile.lock);
-    }
-
-    if(comp_dir(dir) != 0)
-    {
-        pthread_rwlock_wrlock(&conffile.lock);
-        set_dir(dir);
-        pthread_rwlock_unlock(&conffile.lock);
-    }
-
-    //cout << "reload conf file " << endl;
     return 0;
 }

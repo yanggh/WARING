@@ -1,20 +1,15 @@
 #include <iostream>
 #include <thread>
-#include "Conf.h"
 #include "ConsumerTask.h"
 #include "KeepAlive.h"
 #include "RecvSnmp.h"
+#include "Conf.h"
 
 using namespace std;
 
 int main(int argc, char **argv)
 {
-//    string  webip(argv[1]);
-//    int     webport = atoi(argv[2]);
-//    string  commit(argv[3]);
-//    int     trapport = atoi(argv[4]);
-
-//    init_conf(5, 5, webip, webport, commit, trapport, "/tmp/store");
+    init_conf(argv[1]);
 
 	thread  producer0(KeepAlive);
 	thread  producer1(RecvUdp);

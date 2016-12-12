@@ -82,7 +82,8 @@ void produce(string ip)
             itor ++;
         }
 
-        usleep(5000);
+        sleep(1);
+
         //create node
         time_t tt = time(NULL);
         struct tm *t = localtime(&tt);

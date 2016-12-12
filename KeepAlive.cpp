@@ -9,6 +9,7 @@
 #include <list>
 #include <sys/time.h>
 #include <signal.h>
+#include <mysql.h>
 #include "ConsumerTask.h"
 #include "KeepAlive.h"
 #include "Conf.h"
@@ -16,7 +17,6 @@
 
 #define WARING     0
 #define KEEPALIVE  1
-#define TIMEOUT    1
 
 using namespace std;
 
@@ -49,9 +49,61 @@ typedef struct Node
 }Node;
 
 list<Node> clist;
-static pthread_rwlock_t lock;
-
 static int  sockfd = 0;
+
+#if 0
+int  init_client()
+{
+    MYSQL mysql;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+
+    mysql_init(&mysql);
+
+    char mysqlip[256];
+    char username[256];
+    char password[256];
+    char database[256];
+
+    get_mysqlip(mysqlip);
+    get_username(username);
+    get_password(password);
+    get_database(database);
+
+    if(!mysql_real_connect(&mysql,mysqlip, username, password, database, 0, NULL, 0))
+    {
+        cout << "无法连接到数据库，错误原因是:" << mysql_error(&mysql) << endl;
+    }
+
+    char sqlcmd[256];
+    sprintf(sqlcmd,"%s","select * from friends");
+    unsigned  int t=mysql_real_query(&mysql,sqlcmd,(unsigned int)strlen(sqlcmd));
+
+    if(t)
+    {
+        cout << "查询数据库失败" << mysql_error(&mysql) << endl;
+    }
+    else 
+    {
+        res = mysql_store_result(&mysql);//返回查询的全部结果集
+        
+        while((row=mysql_fetch_row(res)) > 0)
+        {
+            //mysql_fetch_row取结果集的下一行
+            for(t = 0; t < mysql_num_fields(res); t++)
+            {
+                //结果集的列的数量
+                cout << row[t] << "\t";
+            }
+            clist.push_back(p);
+        }
+    }
+
+    mysql_free_result(res);
+    mysql_close(&mysql);
+    return 0;
+}
+#endif
 
 int  init_client(int num)
 {
@@ -59,7 +111,11 @@ int  init_client(int num)
     
     Node p;
 
-    pthread_rwlock_wrlock(&lock);
+    if(!clist.empty())
+    {
+        clist.clear();
+    }
+
     for(i = 0; i < num; i ++)
     {
         p.son_sys = 1;
@@ -75,7 +131,6 @@ int  init_client(int num)
 
         clist.push_back(p);
     }
-    pthread_rwlock_unlock(&lock);
 
     return 0;
 }
@@ -91,10 +146,16 @@ int  create_sock()
         return -1;
     } 
 
+#if 1 
+    int sport = get_sport();
+#else
+    int sport = 18888;
+#endif
+
 	bzero(&sin,sizeof(sin));  
 	sin.sin_family=AF_INET;  
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
-	sin.sin_port=htons(18888);
+	sin.sin_port=htons(sport);
     int sin_len = sizeof(sin);
 
 	if(bind(sockfd, (struct sockaddr *)&sin, sin_len) < 0)
@@ -116,20 +177,23 @@ int CheckClient(string ip, int port)
     list<Node>::iterator itor;
     
     itor = clist.begin();
+#if 1 
+    int   timeout = get_keepalive();
+#else
+    int   timeout = 2;
+#endif
 
-    pthread_rwlock_wrlock(&lock);
     while(itor != clist.end())
     {
         if((itor->ip == ip))
         {
             flag = 1;
-            itor->flag = 2 * TIMEOUT;
+            itor->flag = 2 * timeout;
             break;
         }
         itor ++;
     }
 
-    pthread_rwlock_unlock(&lock);
     if(flag == 0)
     {
         cout << "not find dev, ip is " << ip << ", port is " << port << endl;
@@ -211,15 +275,19 @@ int RecvUdp()
 void  alive(int signo)
 {
     list<Node>::iterator itor;
-    pthread_rwlock_rdlock(&lock);
     itor = clist.begin();
 
     //cout << "alive start" << endl;
     ALIVE alive;
-    char buf[1024];
+    char buf[256];
     getalive(&alive);
     
     int  flag = 0;
+#if 1 
+    int  timeout = get_keepalive();
+#else
+    int  timeout = 2;
+#endif
     while(itor != clist.end())
     {
         flag = 0;
@@ -229,7 +297,7 @@ void  alive(int signo)
         }
         else if(itor->flag == 0)
         {
-            itor->flag = 2 * TIMEOUT;
+            itor->flag = 2 * timeout;
             flag = 1;
         }
 
@@ -237,16 +305,13 @@ void  alive(int signo)
         if(flag == 1)
         {
             cout << "keepalive time out" << endl;
-            bzero(buf, 1024);
-            sprintf(buf, "{ son_sys:  \"%d\", stop: \"%d\", ip :\" %s\", port: \"%d\", flag : -1 }", itor->son_sys, itor->stop, itor->ip.c_str(), itor->port);
+            bzero(buf, 256);
+            snprintf(buf, 256, "{ son_sys:  \"%d\", stop: \"%d\", ip :\" %s\", port: \"%d\", flag : -1 }", itor->son_sys, itor->stop, itor->ip.c_str(), itor->port);
             printf("buf = %s\n", buf);
         }
         //ProduceItem(buf, strlen(buf));
-
-
         itor++;
     }
-    pthread_rwlock_unlock(&lock);
 }
 
 int KeepAlive()
@@ -257,10 +322,15 @@ int KeepAlive()
     signal(SIGALRM,  alive);
     memset(&tick, 0, sizeof(tick));
 
-    tick.it_value.tv_sec = TIMEOUT;
+#if 1 
+    int timeout = get_keepalive();
+#else
+    int timeout = 2;
+#endif
+    tick.it_value.tv_sec = timeout;
     tick.it_value.tv_usec = 0;
 
-    tick.it_interval.tv_sec = TIMEOUT;
+    tick.it_interval.tv_sec = timeout;
     tick.it_interval.tv_usec = 0;
 
     if(setitimer(ITIMER_REAL, &tick, NULL) < 0)
@@ -272,3 +342,4 @@ int KeepAlive()
     }
     return 0;
 }
+

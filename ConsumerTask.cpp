@@ -8,6 +8,7 @@
 #include <cstring>
 #include <zmq.hpp>
 #include "Decomp.h"
+#include "Conf.h"
 #include "ConsumerTask.h"
 
 #define  kItemRepositorySize  1024
@@ -94,10 +95,23 @@ void ConsumerTask()
 	uint16_t data_len = 0;
 	InitItemRepository(&gItemRepository);
 
-	zmq::context_t context (1);
+    zmq::context_t context (1);
 	zmq::socket_t socket (context, ZMQ_REQ);
-	socket.connect ("tcp://192.168.34.5:5555");
 
+#if 1 
+    char     webip[256];
+    char     constr[256];
+    bzero(constr, 256);
+    bzero(webip, 256);
+
+    get_webip(webip);
+    int  webport = get_webport();
+    snprintf(constr, 256, "tcp://%s:%d", webip, webport);
+    printf("constr = %s\n", constr);
+	socket.connect (constr);
+#else
+    socket.connect("tcp://192.168.34.5:5555");
+#endif
 	while(1) 
     {
 		unique_lock<mutex> lock(gItemRepository.consumed_item_counter_mtx);

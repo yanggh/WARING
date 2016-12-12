@@ -10,24 +10,36 @@ int get_sport();
 int set_sport(const int sport);
 int comp_sport(const int sport);
 
-int get_webip(string ip);
-int set_webip(const string ip);
-int comp_webip(const string ip);
+int get_webip(char* ip);
+int set_webip(const char* ip);
+int comp_webip(const char* ip);
 
 int get_webport();
 int set_webport(const int webport);
 int comp_webport(const int webport);
 
-int get_dir(string dir);
-int set_dir(const string dir);
-int comp_dir(const string dir);
+int get_dir(char* dir);
+int set_dir(const char* dir);
+int comp_dir(const char* dir);
 
-int init_conf(int keepalive, int sport, string webip, int webport, string commit, int trapport, string dir);
-int reload_conf(int keepalive, int sport, string webip, int webport);
+int  get_commit(char*  commit);
+int  set_commit(const char* commit);
+int  comp_commit(const char* commit);
 
+int  get_trapport(int trapport);
+int  set_trapport(const int trapport);
+int  comp_trapport(const int trapport);
 
-int get_commit(string  commit);
-int set_commit(const string commit);
-int comp_commit(const string commit);
+int  set_username(const char* username);
+int  set_password(const char* password);
+int  set_mysqlip(const char* mysqlip);
+int  set_database(const char* database);
 
+int  get_username(char* username);
+int  get_password(char* password);
+int  get_mysqlip(char* mysqlip);
+int  get_database(char* database);
+
+int init_conf(const char* conffile);
+int init_list();
 #endif
