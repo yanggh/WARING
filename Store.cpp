@@ -22,7 +22,30 @@ int  store(const  uint8_t *data, const uint16_t data_len)
     {
         cout << dir << endl;
         snprintf(cmd, 1024, "mkdir -p %s", dir);
-        system(cmd);
+        int status = system(cmd);
+        if(-1 == status)
+        {
+            cout << "system error!" << endl;
+        }
+        else
+        {
+            if(WIFEXITED(status))
+            {
+                if (0 == WEXITSTATUS(status))
+                {
+                    cout << "run shell script success!" << endl;
+                }
+                else
+                {
+                    cout << "run shell script fail, script exit code: " << WEXITSTATUS(status) << endl;
+                }
+                return -1;
+            }
+            else
+            {
+                cout << "exit status = [" << WEXITSTATUS(status) << "]" << endl;
+            }
+        }
     }
 
     if(fp == NULL)
@@ -30,8 +53,14 @@ int  store(const  uint8_t *data, const uint16_t data_len)
         time_t  t = time(NULL);
         struct  tm *tt = localtime(&t);
   
-        sprintf(filename, "%s/%04d%02d%02d%02d%02d%02d", dir, tt->tm_year + 1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
+        bzero(filename, 1024);
+        snprintf(filename, 1024, "%s/%04d%02d%02d%02d%02d%02d", dir, tt->tm_year + 1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
         fp = fopen(filename, "a+");
+        if(NULL == fp)
+        {
+            cout << "fopen " << filename << " error" << endl;
+            return -1;
+        }
     }
 
     if(num < 100000)
@@ -48,19 +77,17 @@ int  store(const  uint8_t *data, const uint16_t data_len)
         time_t  t = time(NULL);
         struct  tm *tt = localtime(&t);
 
-        sprintf(filename, "%s/%04d%02d%02d%02d%02d%02d", dir, tt->tm_year + 1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
+        bzero(filename, 1024);
+        snprintf(filename, 1024, "%s/%04d%02d%02d%02d%02d%02d", dir, tt->tm_year + 1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
         fp = fopen(filename, "a+");
+        if(NULL == fp)
+        {
+            cout << "fopen " << filename << " error" << endl;
+            return -1;
+        }
+
         num = 0;
     }
     
     return 0;
 }
-
-#ifdef  __TEST__
-int main(int argc, char** argv)
-{
-    int i = 0;
-    for(i = 0; i < 100000; i++)
-    store((uint8_t*)"012345678901234567890\n", 20); 
-}
-#endif

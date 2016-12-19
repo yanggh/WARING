@@ -7,27 +7,32 @@
 #define  KEEPALIVE  "keepalive"
 #define  LOGDIR     "log-dir"
 #define  LISTENPORT "listen-port"
-#define  WEBIP      "webip"
-#define  WEBPORT    "webport"
+#define  WEBIP      "web-ip"
+#define  WEBPORT    "web-port"
+#define  UPDATEIP      "update-ip"
+#define  UPDATEPORT    "update-port"
 #define  COMMIT     "commit"
-#define  SNMPPORT   "trapport"
+#define  SNMPPORT   "trap-port"
 #define  USERNAME   "username"
 #define  PASSWORD   "password"
-#define  MYSQLIP    "mysqlip"
+#define  MYSQLIP    "mysql-ip"
 #define  DATABASE   "database"
+
 
 typedef struct ST_CONF
 {
     int  keepalive;
     char dir[256];
     int  sport;
-    char webip[256];
-    int  webport;
+    char web_ip[256];
+    int  web_port;
+    char update_ip[256];
+    int  update_port;
     char commit[256];
-    int  trapport;
+    int  trap_port;
     char username[256]; 
     char password[256];
-    char mysqlip[256];
+    char mysql_ip[256];
     char database[256];
 }ST_CONF;
 
@@ -65,37 +70,70 @@ int comp_sport(const int sport)
     return (conffile.sport == sport ? 0 : -1);
 }
 
-int get_webip(char* ip)
+int get_update_ip(char* ip)
 {
-    memcpy(ip, conffile.webip, strlen(conffile.webip));
+    memcpy(ip, conffile.update_ip, strlen(conffile.update_ip));
     return 0;
 }
 
-int set_webip(const char* ip)
+int set_update_ip(const char* ip)
 {
-    memcpy(conffile.webip, ip, strlen(ip));
+    memcpy(conffile.update_ip, ip, strlen(ip));
     return 0;
 }
 
-int comp_webip(const char* ip)
+int comp_update_ip(const char* ip)
 {
-    return memcmp(ip, conffile.webip, strlen(conffile.webip)) == 0 ? 0 : -1;
+    return memcmp(ip, conffile.update_ip, strlen(conffile.update_ip)) == 0 ? 0 : -1;
 }
 
-int get_webport()
+int get_update_port()
 {
-    return conffile.webport;
+    return conffile.update_port;
 }
 
-int set_webport(const int webport)
+int set_update_port(const int update_port)
 {
-    conffile.webport = webport;
+    conffile.update_port = update_port;
     return 0;
 }
 
-int comp_webport(const int webport)
+int comp_update_port(const int update_port)
 {
-    return conffile.webport == webport ? 0 : -1;
+    return conffile.update_port == update_port ? 0 : -1;
+}
+
+int get_web_ip(char* ip)
+{
+    memcpy(ip, conffile.web_ip, strlen(conffile.web_ip));
+    return 0;
+}
+
+int set_web_ip(const char* ip)
+{
+    memcpy(conffile.web_ip, ip, strlen(ip));
+    return 0;
+}
+
+int comp_web_ip(const char* ip)
+{
+    return memcmp(ip, conffile.web_ip, strlen(conffile.web_ip)) == 0 ? 0 : -1;
+}
+
+int get_web_port()
+{
+    return conffile.web_port;
+}
+
+int set_web_port(const int web_port)
+{
+    conffile.web_port = web_port;
+    return 0;
+}
+
+int comp_web_port(const int web_port)
+{
+    return conffile.web_port == web_port ? 0 : -1;
 }
 
 int get_dir(char* dir)
@@ -133,21 +171,21 @@ int comp_commit(const char* commit)
     return (memcmp(conffile.commit, commit, strlen(commit)) == 0 ? 0 : -1);
 }
 
-int  get_trapport(int trapport)
+int  get_trap_port(int trap_port)
 {
-    trapport = conffile.trapport;
+    trap_port = conffile.trap_port;
     return 0;
 }
 
-int set_trapport(const int trapport)
+int set_trap_port(const int trap_port)
 {
-    conffile.trapport = trapport;
+    conffile.trap_port = trap_port;
     return 0;
 }
 
-int comp_trapport(const int trapport)
+int comp_trap_port(const int trap_port)
 {
-    return (conffile.trapport == trapport ? 0 : -1);
+    return (conffile.trap_port == trap_port ? 0 : -1);
 }
 
 int  get_username(char* username)
@@ -158,7 +196,7 @@ int  get_username(char* username)
 
 int  set_username(const char* username)
 {
-    memcpy(conffile.username, username, strlen(conffile.username));
+    memcpy(conffile.username, username, strlen(username));
     return 0;
 }
 
@@ -175,16 +213,16 @@ int  set_password(const char* password)
     return 0;
 }
 
-int  get_mysqlip(char *mysqlip)
+int  get_mysql_ip(char *mysql_ip)
 {
-    memcpy(mysqlip, conffile.mysqlip, strlen(conffile.mysqlip));
+    memcpy(mysql_ip, conffile.mysql_ip, strlen(conffile.mysql_ip));
     return 0;
 }
 
-int  set_mysqlip(const char* mysqlip)
+int  set_mysql_ip(const char* mysql_ip)
 {
-    bzero(conffile.mysqlip, 256);
-    memcpy(conffile.mysqlip, mysqlip, strlen(mysqlip));
+    bzero(conffile.mysql_ip, 256);
+    memcpy(conffile.mysql_ip, mysql_ip, strlen(mysql_ip));
     return 0;
 }
 
@@ -211,6 +249,8 @@ int init_conf(const char* conffile)
 
     while(fgets(buff, 256, fp) != NULL)
     {
+        bzero(buf1, 256);
+        bzero(buf2, 256);
         sscanf(buff, "%s %s", buf1, buf2);
 
         if(memcmp(buf1, KEEPALIVE, strlen(KEEPALIVE)) == 0)
@@ -225,13 +265,21 @@ int init_conf(const char* conffile)
         {
             set_sport(atoi(buf2)); 
         }
+        else if(memcmp(buf1, UPDATEIP, strlen(UPDATEIP)) == 0)
+        {
+            set_update_ip(buf2); 
+        }
+        else if(memcmp(buf1, UPDATEPORT, strlen(UPDATEPORT)) == 0)
+        {
+            set_update_port(atoi(buf2));
+        }
         else if(memcmp(buf1, WEBIP, strlen(WEBIP)) == 0)
         {
-            set_webip(buf2); 
+            set_web_ip(buf2); 
         }
         else if(memcmp(buf1, WEBPORT, strlen(WEBPORT)) == 0)
         {
-            set_webport(atoi(buf2));
+            set_web_port(atoi(buf2));
         }
         else if(memcmp(buf1, COMMIT, strlen(COMMIT)) == 0)
         {
@@ -239,7 +287,7 @@ int init_conf(const char* conffile)
         }
         else if(memcmp(buf1, SNMPPORT, strlen(SNMPPORT)) == 0)
         {
-            set_trapport(atoi(buf2));
+            set_trap_port(atoi(buf2));
         }
         else if(memcmp(buf1, USERNAME, strlen(USERNAME)) == 0)
         {
@@ -251,7 +299,7 @@ int init_conf(const char* conffile)
         }
         else if(memcmp(buf1, MYSQLIP, strlen(MYSQLIP)) == 0)
         {
-            set_mysqlip(buf2);
+            set_mysql_ip(buf2);
         }
         else if(memcmp(buf1, DATABASE, strlen(DATABASE)) == 0)
         {
@@ -259,14 +307,16 @@ int init_conf(const char* conffile)
         }
         else
         {
-            cout << "Not find buff" << endl;
+            cout << "buf1 find " << buf1 << endl;
+            cout << "buf2 find " << buf2 << endl;
         }
 
-        bzero(buf1, 256);
-        bzero(buf2, 256);
         bzero(buff, 256);  
     } 
     fclose(fp);
 
     return 0;
 }
+
+
+

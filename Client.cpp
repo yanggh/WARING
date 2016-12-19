@@ -12,8 +12,7 @@
 #pragma  pack (1)
 using namespace std;
 
-static  const int sport=18888;
-static  const int rport=18887;
+static  int  timeout = 0;
 
 typedef struct TT{
     uint8_t   year_h;
@@ -57,7 +56,7 @@ typedef struct SHAKE
 static  int socket_descriptor = 0;
 static  list<SEGMENT> seglist;
 
-void produce(string ip)
+void produce(string ip, int port)
 {
     SEGMENT seg;
     static uint16_t num = 0;
@@ -66,23 +65,23 @@ void produce(string ip)
     bzero(&address,sizeof(address));
     address.sin_family=AF_INET;
     address.sin_addr.s_addr=inet_addr(ip.c_str());
-    address.sin_port=htons(sport);
+    address.sin_port=htons(port);
 
     list<SEGMENT>::iterator itor;
-    while(1)
+    while(true)
     {
         itor = seglist.begin();
         while(itor != seglist.end())
         {
             if(itor->check == 1)
             {
-                //sendto(socket_descriptor, (uint8_t*)&itor, sizeof(SEGMENT), 0,  (struct sockaddr *)&address,  sizeof(address));
+                sendto(socket_descriptor, (uint8_t*)&itor, sizeof(SEGMENT), 0,  (struct sockaddr *)&address,  sizeof(address));
                 break;
             }
             itor ++;
         }
 
-        sleep(1);
+        sleep(timeout);
 
         //create node
         time_t tt = time(NULL);
@@ -91,11 +90,19 @@ void produce(string ip)
         seg.type = 0xff7e;
         seg.fnum = (num++) % 0xffff;
         seg.flen = sizeof(SEGMENT);
+#if 0
         seg.son_sys = rand() % 0x0a;
         seg.stop = rand() % 0x20;
         seg.eng = rand() % 0x10;
         seg.node = rand() % 167 + 0x100;
-
+        seg.bug = rand() % 50 + 4096;
+#else
+        seg.son_sys = 6;
+        seg.stop = 10;
+        seg.eng = 6;
+        seg.node = 126;
+	    seg.bug = 4112;
+#endif
         seg.tt.year_h = (t->tm_year + 1900) / 100;
         seg.tt.year_l = (t->tm_year + 1900) % 100;
         seg.tt.mon = t->tm_mon;
@@ -115,7 +122,7 @@ void produce(string ip)
     }
 }
 
-void  consum()
+void  consum(int  port)
 {
     int ret;
     int sin_len;
@@ -126,7 +133,7 @@ void  consum()
     bzero(&sin,sizeof(sin));
     sin.sin_family=AF_INET;
     sin.sin_addr.s_addr=htonl(INADDR_ANY);
-    sin.sin_port=htons(rport);
+    sin.sin_port=htons(port);
     sin_len=sizeof(sin);
 
     socket_descriptor=socket(AF_INET,SOCK_DGRAM,0);
@@ -141,8 +148,7 @@ void  consum()
     SHAKE    shake;
 
     list<SEGMENT>::iterator itor;
-
-    while(1)
+    while(true)
     {
         ret = recvfrom(socket_descriptor,  message,   256, 0, (struct sockaddr *)&sin, (socklen_t*)&sin_len);
         message[ret] = '\0';
@@ -158,6 +164,7 @@ void  consum()
                     if(itor->fnum == atoi(message))
                     {
                         seglist.erase(itor);
+                        cout << "fnum = " << itor->fnum << ", atoi(message) = " << atoi(message)  << endl;
                         flag = 1;
                         break;
                     }
@@ -169,8 +176,10 @@ void  consum()
                     cout << "not find send, num = " << atoi(message)  << endl;
                 }
             }
-            else
+            else if(ret == sizeof(SHAKE))
             {
+                cout << "keep alive msg" << endl;
+
                 q = (SHAKE*)message;
 
                 shake.type = 0xff;
@@ -187,6 +196,10 @@ void  consum()
 
                 sendto(socket_descriptor, (uint8_t*)&shake, sizeof(SHAKE), 0,  (struct sockaddr *)&sin,  sizeof(sin));
             }
+            else
+            {
+                cout << "recv  error num = " << ret << endl;
+            }
         }
     }
     close(socket_descriptor);
@@ -194,9 +207,58 @@ void  consum()
 
 int main(int argc, char **argv)
 {
-    
-    thread produce1(produce, argv[1]);
-    thread consum1(consum);
+    FILE* fp = fopen(argv[1], "r");
+    if(NULL == fp)
+    {
+        return -1;
+    }
+
+    char buff[1024] = {0};
+    char buf1[1024] = {0};
+    char buf2[1024] = {0};
+    int  send_port = 0;
+    int  recv_port = 0;
+    string ip_addr;
+
+    while(fgets(buff, 1024, fp) != NULL)
+    {
+        bzero(buf1, 1024);
+        bzero(buf2, 1024);
+        sscanf(buff, "%s  %s", buf1, buf2);
+        if(memcmp(buf1, "send_port", strlen(buf1)) == 0)
+        {
+            send_port = atoi(buf2); 
+        }
+        else  if(memcmp(buf1, "recv_port", strlen(buf1)) == 0)
+        {
+            recv_port = atoi(buf2); 
+        }
+        else  if(memcmp(buf1, "time_sec", strlen(buf1)) == 0)
+        {
+            timeout = atoi(buf2); 
+        }
+        else  if(memcmp(buf1, "ip_addr", strlen(buf1)) == 0)
+        {
+            ip_addr = string(buf2); 
+        }
+        else
+        {
+            cout << "error " << endl;
+        }
+
+        bzero(buff, 1024);
+    }
+    fclose(fp);
+    fp = NULL;
+
+    cout << "argv[1] = " << argv[1] << endl;
+    cout << "send_port = " << send_port << endl;
+    cout << "recv_port = " << recv_port << endl;
+    cout << "timeout = " << timeout << endl;
+    cout << "ip_addr = " << ip_addr << endl;
+
+    thread produce1(produce, ip_addr, send_port);
+    thread consum1(consum, recv_port);
 
     produce1.join();
     consum1.join();

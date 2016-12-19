@@ -4,8 +4,8 @@
 #include <iostream>
 #include "Decomp.h"
 
-using namespace std;
 #pragma  pack (1)
+using namespace std;
 
 #define  WAR_JSON_STR   "{ type: \"%d\", fnum: \"%d\", flen: \"%d\", son_sys: \"%d\", stop: \"%d\", eng: \"%d\", node:\"%d\", bug: \"%d\", time: \"%02d%02d-%02d-%02d %02d:%02d:%02d\", res1: \"%d\", res2: \"%d\", res3: \"%d\", check: \"%d\"}"
 #define  SHAKE_JSON_STR   "{ type:\"%d\", len: \"%d\", son_sys: \"%d\", time: \"%02d%02d-%02d-%02d  %02d:%02d:%02d\"}"
@@ -109,35 +109,3 @@ int  decomp(const uint8_t *input, const uint16_t inlen, uint8_t *output, uint16_
 
     return 0;
 }
-
-#ifdef  __TEST__
-int main(int argc, char ** argv)
-{
-#if 10
-    struct SEGMENT *p = NULL;
-    /********create data*************/ 
-    uint8_t   temp[26];
-    memset(&temp, 0x01, 26);
-    p = (struct SEGMENT*)&temp;
-    p->type = 0xff7e;
-    p->year_h = 20;
-    p->year_l = 16;
-    /**************************/
-#else
-    struct SHAKE *p = NULL;
-    /********create data*************/ 
-    uint8_t   temp[10];
-    memset(&temp, 0x01, 10);
-    p = (struct SHAKE*)&temp;
-    p->type = 0xaa;
-    p->year_h = 20;
-    p->year_l = 16;
-    /**************************/
-#endif
-
-    uint8_t   buff[1024];
-    uint16_t  len;
-    decomp(temp, 18, buff, &len);
-    return 0;
-}
-#endif

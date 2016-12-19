@@ -14,11 +14,14 @@ int main(int argc, char **argv)
 	thread  producer0(KeepAlive);
 	thread  producer1(RecvUdp);
 	thread  producer2(ConsumerTask);
-//	thread  producer2(RecvSnmp, 162);
+	thread  producer3(RecvSnmp, 162);
+    thread  producer4(UpdateSig);
 
 	producer0.join();
 	producer1.join();
 	producer2.join();
+	producer3.join();
+	producer4.join();
 
 	return 0;
 }

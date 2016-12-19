@@ -9,7 +9,7 @@
 #include "RecvSnmp.h"
 using namespace Snmp_pp;
 
-void callback( int reason, Snmp *snmp, Pdu &pdu, SnmpTarget &target, void *cd)
+static void callback( int reason, Snmp *snmp, Pdu &pdu, SnmpTarget &target, void *cd)
 {
     Vb nextVb;
     GenAddress addr;
