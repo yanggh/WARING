@@ -17,6 +17,9 @@
 #define  PASSWORD   "password"
 #define  MYSQLIP    "mysql-ip"
 #define  DATABASE   "database"
+#define  MODBUS_IP   "modbus-ip"
+#define  MODBUS_PORT   "modbus-port"
+
 
 
 typedef struct ST_CONF
@@ -34,6 +37,8 @@ typedef struct ST_CONF
     char password[256];
     char mysql_ip[256];
     char database[256];
+    char modbus_ip[256];
+    int  modbus_port;
 }ST_CONF;
 
 static  ST_CONF  conffile;
@@ -171,10 +176,9 @@ int comp_commit(const char* commit)
     return (memcmp(conffile.commit, commit, strlen(commit)) == 0 ? 0 : -1);
 }
 
-int  get_trap_port(int trap_port)
+int  get_trap_port()
 {
-    trap_port = conffile.trap_port;
-    return 0;
+    return conffile.trap_port;
 }
 
 int set_trap_port(const int trap_port)
@@ -236,6 +240,30 @@ int  set_database(const char* database)
 {
     bzero(conffile.database, 256);
     memcpy(conffile.database, database, strlen(database));
+    return 0;
+}
+
+int  get_modbus_ip(char* modbus_ip)
+{
+    memcpy(modbus_ip, conffile.modbus_ip, strlen(conffile.modbus_ip));
+    return 0;
+}
+
+int  set_modbus_ip(const char* modbus_ip)
+{
+    bzero(conffile.modbus_ip, 256);
+    memcpy(conffile.modbus_ip, modbus_ip, strlen(modbus_ip));
+    return 0;
+}
+
+int  get_modbus_port()
+{
+    return conffile.modbus_port;
+}
+
+int  set_modbus_port(const int modbus_port)
+{
+    conffile.modbus_port = modbus_port;
     return 0;
 }
 
@@ -304,6 +332,14 @@ int init_conf(const char* conffile)
         else if(memcmp(buf1, DATABASE, strlen(DATABASE)) == 0)
         {
             set_database(buf2);
+        }
+        else if(memcmp(buf1, MODBUS_IP, strlen(MODBUS_IP)) == 0)
+        {
+            set_modbus_ip(buf2);
+        }
+        else if(memcmp(buf1, MODBUS_PORT, strlen(MODBUS_PORT)) == 0)
+        {
+            set_modbus_port(atoi(buf2));
         }
         else
         {

@@ -4,12 +4,13 @@
 #include "KeepAlive.h"
 #include "RecvSnmp.h"
 #include "Conf.h"
+#include "SendMod.h"
+#include "Daemon.h"
 
 using namespace std;
-
 int main(int argc, char **argv)
 {
-    init_conf(argv[1]);
+    init_conf("/usr/local/warning/etc/database.conf");
 
 	thread  producer0(KeepAlive);
 	thread  producer1(RecvUdp);

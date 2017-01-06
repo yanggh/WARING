@@ -7,6 +7,7 @@
 
 #include "ConsumerTask.h"
 #include "RecvSnmp.h"
+
 using namespace Snmp_pp;
 
 static void callback( int reason, Snmp *snmp, Pdu &pdu, SnmpTarget &target, void *cd)
@@ -49,7 +50,6 @@ static void callback( int reason, Snmp *snmp, Pdu &pdu, SnmpTarget &target, void
 
 int RecvSnmp(int trap_port = 162)
 {
-    //----------[ create a SNMP++ session ]-----------------------------------
     int status; 
     Snmp::socket_startup();  // Initialize socket subsystem
 
@@ -83,13 +83,3 @@ int RecvSnmp(int trap_port = 162)
 
     return 0;
 }
-
-#if 0
-int main()
-{
-    thread  produce(RecvSnmp, 162);
-    produce.join();
-
-    return 0;
-}
-#endif

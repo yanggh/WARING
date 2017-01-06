@@ -97,15 +97,15 @@ void produce(string ip, int port)
         seg.node = rand() % 167 + 0x100;
         seg.bug = rand() % 50 + 4096;
 #else
-        seg.son_sys = 6;
-        seg.stop = 10;
-        seg.eng = 6;
-        seg.node = 126;
-	    seg.bug = 4112;
+        seg.son_sys = rand() % 2 ? 1 : 6;
+        seg.stop = rand() % 2 + 1;
+        seg.eng = 1;
+        seg.node = rand() % 12 + 1;
+	    seg.bug = seg.son_sys == 1 ? rand() % 119 + 4096 : (seg.son_sys == 6 ? rand() % 16 +  4215 : 4215);
 #endif
         seg.tt.year_h = (t->tm_year + 1900) / 100;
         seg.tt.year_l = (t->tm_year + 1900) % 100;
-        seg.tt.mon = t->tm_mon;
+        seg.tt.mon = t->tm_mon + 1;
         seg.tt.day = t->tm_mday;
         seg.tt.hh = t->tm_hour;
         seg.tt.mm = t->tm_min;

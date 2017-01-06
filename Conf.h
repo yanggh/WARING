@@ -34,9 +34,9 @@ int  get_commit(char*  commit);
 int  set_commit(const char* commit);
 int  comp_commit(const char* commit);
 
-int  get_trap_prt(int trap_prt);
-int  set_trap_prt(const int trap_prt);
-int  comp_trap_prt(const int trap_prt);
+int  get_trap_port();
+int  set_trap_port(const int trap_port);
+int  comp_trap_port(const int trap_port);
 
 int  set_username(const char* username);
 int  set_password(const char* password);
@@ -47,6 +47,11 @@ int  get_username(char* username);
 int  get_password(char* password);
 int  get_mysql_ip(char* mysql_ip);
 int  get_database(char* database);
+
+int  get_modbus_ip(char* modbus_ip);
+int  set_modbus_ip(const char* modbus_ip);
+int  get_modbus_port();
+int  set_modbus_port(const int modbus_port);
 
 int init_conf(const char* conffile);
 int init_list();

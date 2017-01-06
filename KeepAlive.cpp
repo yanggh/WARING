@@ -267,7 +267,7 @@ static  int  init_client(void)
                 p.ip = row[IPSUB];
                 p.port = atoi(row[PORTSUB]);
 #else
-                p.ip = "192.168.34.28";
+                p.ip = "172.16.42.55";
                 p.port = 18887;
 #endif
                 p.flag = CONNECT;
@@ -395,7 +395,6 @@ int  UpdateSig()
             {
                 cout << "update error" << endl;
             }
-            
         }
         else
         {
