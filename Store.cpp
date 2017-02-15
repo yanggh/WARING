@@ -4,6 +4,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
+#include <syslog.h>
 #include "Store.h"
 #include "Conf.h"
 
@@ -20,12 +21,12 @@ int  store(const  uint8_t *data, const uint16_t data_len)
 
     if(access(dir, F_OK) != 0)
     {
-        cout << dir << endl;
+        syslog(LOG_INFO, "%s", dir);
         snprintf(cmd, 1024, "mkdir -p %s", dir);
         int status = system(cmd);
         if(-1 == status)
         {
-            cout << "system error!" << endl;
+            syslog(LOG_INFO, "system error.");
         }
         else
         {
@@ -33,17 +34,17 @@ int  store(const  uint8_t *data, const uint16_t data_len)
             {
                 if (0 == WEXITSTATUS(status))
                 {
-                    cout << "run shell script success!" << endl;
+                    syslog(LOG_INFO, "run shell script success!");
                 }
                 else
                 {
-                    cout << "run shell script fail, script exit code: " << WEXITSTATUS(status) << endl;
+                    syslog(LOG_ERR,  "run shell script fail, script exit code: %d", WEXITSTATUS(status));
                 }
                 return -1;
             }
             else
             {
-                cout << "exit status = [" << WEXITSTATUS(status) << "]" << endl;
+                syslog(LOG_ERR, "exit status = %d", WEXITSTATUS(status));
             }
         }
     }
@@ -58,7 +59,7 @@ int  store(const  uint8_t *data, const uint16_t data_len)
         fp = fopen(filename, "a+");
         if(NULL == fp)
         {
-            cout << "fopen " << filename << " error" << endl;
+            syslog(LOG_INFO, "fopen %s error.", filename);
             return -1;
         }
     }
@@ -82,7 +83,7 @@ int  store(const  uint8_t *data, const uint16_t data_len)
         fp = fopen(filename, "a+");
         if(NULL == fp)
         {
-            cout << "fopen " << filename << " error" << endl;
+            syslog(LOG_INFO, "fopen %s error.", filename);
             return -1;
         }
 

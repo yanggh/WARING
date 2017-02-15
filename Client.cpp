@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <syslog.h>
 
 #pragma  pack (1)
 using namespace std;
@@ -164,7 +165,7 @@ void  consum(int  port)
                     if(itor->fnum == atoi(message))
                     {
                         seglist.erase(itor);
-                        cout << "fnum = " << itor->fnum << ", atoi(message) = " << atoi(message)  << endl;
+                        syslog(LOG_INFO, "fnum = %d, atoi(message) = %d",  itor->fnum, atoi(message));
                         flag = 1;
                         break;
                     }
@@ -173,13 +174,12 @@ void  consum(int  port)
 
                 if(flag == 1)
                 {
-                    cout << "not find send, num = " << atoi(message)  << endl;
+                    syslog(LOG_INFO, "not find send, num = %d", atoi(message));
                 }
             }
             else if(ret == sizeof(SHAKE))
             {
-                cout << "keep alive msg" << endl;
-
+                syslog(LOG_DEBUG, "keep alive msg");
                 q = (SHAKE*)message;
 
                 shake.type = 0xff;
@@ -198,7 +198,7 @@ void  consum(int  port)
             }
             else
             {
-                cout << "recv  error num = " << ret << endl;
+                syslog(LOG_INFO, "recv error num %d", ret);
             }
         }
     }
@@ -243,7 +243,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            cout << "error " << endl;
+            syslog(LOG_INFO, "error");
         }
 
         bzero(buff, 1024);
@@ -251,12 +251,7 @@ int main(int argc, char **argv)
     fclose(fp);
     fp = NULL;
 
-    cout << "argv[1] = " << argv[1] << endl;
-    cout << "send_port = " << send_port << endl;
-    cout << "recv_port = " << recv_port << endl;
-    cout << "timeout = " << timeout << endl;
-    cout << "ip_addr = " << ip_addr << endl;
-
+    syslog(LOG_ERR, "send_port = %d, recv_port = %d, timeout = %d, ip_addr = %s.", send_port, recv_port, timeout, ip_addr.c_str());
     thread produce1(produce, ip_addr, send_port);
     thread consum1(consum, recv_port);
 

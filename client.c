@@ -22,12 +22,12 @@ int main(int argc, char *argv[])
     modbus_set_slave(ctx, 1);
 
     if (ctx == NULL) {
-        fprintf(stderr, "Unable to allocate libmodbus context\n");
+        syslog(LOG_ERR, "Unable to allocate libmodbus context\n");
         return -1;
     }
 
     if (modbus_connect(ctx) == -1) {
-        fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
+        syslog(LOG_ERR, "Connection failed: %s\n", modbus_strerror(errno));
         modbus_free(ctx);
         return -1;
     }
@@ -47,9 +47,8 @@ int main(int argc, char *argv[])
                 tab_rp_registers);
 
         for (i=0; i < rc; i++) {
-            printf("%02x ", tab_rp_registers[i]);
+            syslog(LOG_INFO, "%02x ", tab_rp_registers[i]);
         }
-        printf("\n");
         sleep(1);
     }
 

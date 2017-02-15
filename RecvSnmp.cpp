@@ -1,5 +1,6 @@
 #include <libsnmp.h>
 #include <thread>
+#include <syslog.h>
 
 #include "snmp_pp/snmp_pp.h"
 #include "snmp_pp/collect.h"
@@ -18,21 +19,17 @@ static void callback( int reason, Snmp *snmp, Pdu &pdu, SnmpTarget &target, void
     target.get_address(addr);
     UdpAddress from(addr);
 
-    cout << "reason: " << reason << endl
-        << "msg: " << snmp->error_msg(reason) << endl
-        << "from: " << from.get_printable() << endl;
+    syslog(LOG_INFO, "reason: %d, msg: %s, from: %s", reason, snmp->error_msg(reason), from.get_printable());
 
     Oid id;
     pdu.get_notify_id(id);
-    cout << "ID:  " << id.get_printable() << endl;
-    cout << "Type:" << pdu.get_type() << endl;
+    syslog(LOG_INFO, "ID: %s, Type:%d.", id.get_printable(), pdu.get_type());
 
     for (int i=0; i<pdu.get_vb_count(); i++)
     {
         pdu.get_vb(nextVb, i);
 
-        cout << "Oid: " << nextVb.get_printable_oid() << endl
-            << "Val: " <<  nextVb.get_printable_value() << endl;
+        syslog(LOG_INFO, "Oid: %s, Val: %s.", nextVb.get_printable_oid(),  nextVb.get_printable_value());
     }
 
     if (pdu.get_type() == sNMP_PDU_INFORM) 
@@ -45,7 +42,6 @@ static void callback( int reason, Snmp *snmp, Pdu &pdu, SnmpTarget &target, void
     }
                 
     //ProduceItem((uint8_t *)nextVb.get_printable_value, (uint16_t)1024);
-    cout << endl;
 }
 
 int RecvSnmp(int trap_port = 162)
@@ -56,7 +52,7 @@ int RecvSnmp(int trap_port = 162)
     Snmp snmp(status);                // check construction status
     if ( status != SNMP_CLASS_SUCCESS)
     {
-        cout << "SNMP++ Session Create Fail, " << snmp.error_msg(status) << "\n";
+        syslog(LOG_INFO, "SNMP++ Session Create Fail, %s",  snmp.error_msg(status));
         return 1;
     }
 
@@ -67,12 +63,12 @@ int RecvSnmp(int trap_port = 162)
     status = snmp.notify_register(oidc, targetc, callback, NULL);
     if (status != SNMP_CLASS_SUCCESS)
     {
-        cout << "Error register for notify (" << status << "): " << snmp.error_msg(status) << endl;
+        syslog(LOG_INFO, "Error register for notify (%d):%s", status,  snmp.error_msg(status));
         exit(1);
     }
     else
     {
-        cout << "Waiting for traps/informs..." << endl;
+        syslog(LOG_INFO, "Waiting for traps/informs...");
     }
 
     snmp.start_poll_thread(1);

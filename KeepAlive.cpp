@@ -12,6 +12,7 @@
 #include <mysql.h>
 #include <zmq.hpp>
 #include <pthread.h>
+#include <syslog.h>
 #include "ConsumerTask.h"
 #include "KeepAlive.h"
 #include "Conf.h"
@@ -75,12 +76,12 @@ static  int   keep_json_str(const int  son_sys, const int stop, const char* ip, 
     int iLen = snprintf(buf, 256, KEEP_ALIVE_STR,  son_sys, stop, ip, port, flag);
     if(iLen > 0)
     {
-//        cout << "keep_json_str state update: iLen = " << iLen << ", buf = " << buf << endl;
+        syslog(LOG_INFO, "keep_json_str state update: iLen = %d, buf = %s", iLen, buf);
         ProduceItem((uint8_t *)buf, iLen, KEEPALIVE);
     }
     else
     {
-        cout << "keep_json_str error " << endl; 
+        syslog(LOG_ERR, "keep_json_str error.");
     }
 
     return 0;
@@ -93,7 +94,7 @@ static int  create_sock()
 
     if(((sockfd = socket(AF_INET, SOCK_DGRAM, 0))< 0))
     {
-        cout << "socket error" << endl;
+        syslog(LOG_ERR, "socket error");
         return -1;
     } 
 
@@ -107,7 +108,7 @@ static int  create_sock()
 
 	if(bind(sockfd, (struct sockaddr *)&sin, sin_len) < 0)
     {
-        cout << "bind error" << endl;
+        syslog(LOG_ERR, "bind error");
         return -1;
     }
 
@@ -241,7 +242,7 @@ static  int  init_client(void)
 
     if(!mysql_real_connect(&mysql,mysqlip, username, password, database, 0, NULL, 0))
     {
-        cout << "无法连接到数据库，错误原因是:" << mysql_error(&mysql) << endl;
+        syslog(LOG_ERR, "无法连接到数据库，错误原因是:%s.", mysql_error(&mysql));
         return  -1;
     }
 
@@ -249,7 +250,7 @@ static  int  init_client(void)
 
     if(t)
     {
-        cout << "查询数据库失败" << mysql_error(&mysql) << endl;
+        syslog(LOG_ERR, "查询数据库失败.");
         ret = -1;
     }
     else 
@@ -308,7 +309,7 @@ int RecvUdp()
     ret = create_sock();
     if(ret == -1)
     {
-        cout << "create_sock error " << endl;
+        syslog(LOG_ERR, "create_sock error.");
         return -1;
     }
 
@@ -323,12 +324,12 @@ int RecvUdp()
                 store((uint8_t*)message, iLen);
                 sendto(sockfd, (uint8_t*)&fnum, 2, 0, (struct sockaddr *)&sin,  sin_len);  
                 ProduceItem((uint8_t *)message, (uint16_t)iLen, WARING);
-                cout << "WARING: " << inet_ntoa(sin.sin_addr) << ":" << ntohs(sin.sin_port) << endl;
+                syslog(LOG_INFO, "WARING: %s:%d.", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
             }
             else if(type == KEEPALIVE)
             {
                 CheckClient(inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
-                cout << "KEEPALIVE: " << inet_ntoa(sin.sin_addr) << ":" << ntohs(sin.sin_port) << endl;
+                syslog(LOG_INFO, "KEEPALIVE %s:%d.", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
             }
         }
     }
@@ -344,7 +345,7 @@ int KeepAlive()
     int ret = init_client();
     if(ret == -1)
     {
-        cout << "not find client ip and port" << endl;
+        syslog(LOG_ERR, "not find client ip and port.");
     }
 
     signal(SIGALRM,  alive);
@@ -357,7 +358,7 @@ int KeepAlive()
     tick.it_interval.tv_usec = 0;
 
     if(setitimer(ITIMER_REAL, &tick, NULL) < 0)
-        cout << "Set timer failed!" << endl;
+        syslog(LOG_ERR, "Set timer failed.");
 
     while(true)
     {
@@ -393,12 +394,12 @@ int  UpdateSig()
             int  ret = init_client();
             if(ret == -1)
             {
-                cout << "update error" << endl;
+                syslog(LOG_INFO, "update error.");
             }
         }
         else
         {
-            cout << "error: request.size() = " << request.size() << endl;
+            syslog(LOG_ERR, "error: request.size() = %ld.", request.size());
         }
 
         // 应答World

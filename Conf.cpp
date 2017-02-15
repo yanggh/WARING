@@ -2,6 +2,7 @@
 #include <thread>
 #include <unistd.h>
 #include <string.h>
+#include <syslog.h>
 #include "Conf.h"
 
 #define  KEEPALIVE  "keepalive"
@@ -343,8 +344,7 @@ int init_conf(const char* conffile)
         }
         else
         {
-            cout << "buf1 find " << buf1 << endl;
-            cout << "buf2 find " << buf2 << endl;
+            syslog(LOG_INFO, "buf1 find %s, buf2 find %s", buf1, buf2);
         }
 
         bzero(buff, 256);  

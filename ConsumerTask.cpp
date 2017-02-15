@@ -8,6 +8,7 @@
 #include <cstring>
 #include "zhelpers.hpp"
 #include <sstream>
+#include <syslog.h>
 #include "Decomp.h"
 #include "Conf.h"
 #include "ConsumerTask.h"
@@ -44,7 +45,7 @@ void ProduceItem(const uint8_t* item, const uint16_t len, const uint16_t  type)
 	while(((gItemRepository.write_position + 1) % kItemRepositorySize)
 			== gItemRepository.read_position) 
     {
-		cout << "Producer is waiting for an empty slot...\n";
+        syslog(LOG_INFO, "Producer is waiting for an empty slot...");
 		(gItemRepository.repo_not_full).wait(lock);
 	}
 
@@ -68,7 +69,8 @@ static  uint8_t *ConsumeItem(ItemRepository *ir, uint8_t* data,uint16_t *data_le
     unique_lock<mutex> lock(ir->mtx);
 
     while(ir->write_position == ir->read_position) {
-        cout << "Consumer is waiting for items...\n";
+        syslog(LOG_INFO, "Consumer is waiting for items...");
+        
         (ir->repo_not_empty).wait(lock);
     }
 
@@ -155,11 +157,11 @@ void ConsumerTask()
                    zmq::message_t  req(jsonlen);
                    memcpy(req.data(), jsonstr, jsonlen);
    
-                   cout << "jsonstr = " << jsonstr << endl;
+                   syslog(LOG_INFO, "jsonstr = %s", jsonstr);
                    socket.send(req);
                    zmq::message_t reply;
                    socket.recv (&reply);
-                   cout << "reply.data is " << (char*)reply.data() << endl;
+                   syslog(LOG_INFO, "reply.data is %s", (char*)reply.data());
                }
    
            }
@@ -239,7 +241,6 @@ void ConsumerTask()
             {
                 stringstream request;
                 request << jsonstr;
-                cout << "request.str = " << request.str() << "a" << endl;
                 s_send(*client, request.str());
 
                 bool expect_reply = true;
@@ -249,18 +250,15 @@ void ConsumerTask()
                     zmq::pollitem_t items[] = { { *client, 0, ZMQ_POLLIN, 0 } };
                     zmq::poll (&items[0], 1, REQUEST_TIMEOUT);
 
-                    cout << "If we got a reply, process it" << endl;
                     //  If we got a reply, process it
                     if (items[0].revents & ZMQ_POLLIN) {
                         break;
                         //  We got a reply from the server, must match sequence
                         string reply = s_recv (*client);
-                        cout << "reply is " << reply << endl;
                         expect_reply = false;
                     }
                     else
                     {
-                        cout << "W: no response from server, retrying..." << endl;
                         
                         delete client;
                         client = s_client_socket (context);

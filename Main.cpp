@@ -12,10 +12,10 @@ int main(int argc, char **argv)
 {
     init_conf("/usr/local/warning/etc/database.conf");
 
-	thread  producer0(KeepAlive);
-	thread  producer1(RecvUdp);
-	thread  producer2(ConsumerTask);
-	thread  producer3(RecvSnmp, 162);
+    thread  producer0(KeepAlive);
+    thread  producer1(RecvUdp);
+    thread  producer2(ConsumerTask);
+    thread  producer3(RecvSnmp, 162);
     thread  producer4(UpdateSig);
 
 	producer0.join();
